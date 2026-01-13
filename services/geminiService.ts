@@ -1,14 +1,17 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { AIRating } from "../types";
 
-// Always create the GoogleGenAI instance inside the function call for API Key safety and to follow guidelines
+/**
+ * 获取推荐理由
+ * 使用 gemini-flash-lite-latest 提供更稳定的响应。
+ * 针对 Rpc failed (code 500) 错误，Lite 模型通常能绕过复杂的推理超时问题。
+ */
 export async function getFoodReason(foodName: string): Promise<AIRating> {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: `为什么今天中午适合吃${foodName}？请给出一个简短、可爱且极具诱惑力的理由。`,
+      model: "gemini-flash-lite-latest",
+      contents: [{ parts: [{ text: `为什么今天中午适合吃${foodName}？请给出一个简短、可爱且极具诱惑力的理由。` }] }],
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -29,14 +32,22 @@ export async function getFoodReason(foodName: string): Promise<AIRating> {
       }
     });
 
-    // .text is a property, not a method. Use it with trim() for JSON parsing.
-    const jsonStr = response.text?.trim() || '{"reason": "美食就在眼前，快去享用吧！", "mood": "开心"}';
+    // .text 是属性而非方法
+    const jsonStr = response.text?.trim();
+    if (!jsonStr) {
+      throw new Error("Empty response from AI");
+    }
+    
     const result = JSON.parse(jsonStr);
-    return result;
+    return {
+      reason: result.reason || "因为它看起来就很好吃！你是美食的小雷达~ 🤤",
+      mood: result.mood || "期待满满"
+    };
   } catch (error) {
     console.error("AI Reason generation failed:", error);
+    // 降级处理，保证用户体验
     return {
-      reason: "因为它看起来就很好吃！你是美食的小雷达~",
+      reason: "因为它看起来就很好吃！你是美食的小雷达~ 🤤",
       mood: "期待满满"
     };
   }

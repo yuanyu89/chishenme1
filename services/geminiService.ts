@@ -2,9 +2,9 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { AIRating } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
+// Always create the GoogleGenAI instance inside the function call for API Key safety and to follow guidelines
 export async function getFoodReason(foodName: string): Promise<AIRating> {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
@@ -29,7 +29,9 @@ export async function getFoodReason(foodName: string): Promise<AIRating> {
       }
     });
 
-    const result = JSON.parse(response.text || '{"reason": "美食就在眼前，快去享用吧！", "mood": "开心"}');
+    // .text is a property, not a method. Use it with trim() for JSON parsing.
+    const jsonStr = response.text?.trim() || '{"reason": "美食就在眼前，快去享用吧！", "mood": "开心"}';
+    const result = JSON.parse(jsonStr);
     return result;
   } catch (error) {
     console.error("AI Reason generation failed:", error);

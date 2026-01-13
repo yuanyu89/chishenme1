@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>今天中午吃什么 - 终极选择器</title>
+    <!-- Tailwind Play CDN: 该警告是 CDN 脚本的默认行为，不影响运行。 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
     <style>
@@ -12,6 +13,8 @@
             font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
             background-color: #FFF9F0;
             color: #5D4037;
+            margin: 0;
+            padding: 0;
         }
         .font-cute {
             font-family: 'ZCOOL KuaiLe', cursive;
@@ -23,9 +26,28 @@
         .animate-bounce-subtle {
             animation: bounce-subtle 2s infinite ease-in-out;
         }
-        /* 隐藏滚动条但保留功能 */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* 避免白屏时的突兀感 */
+        #root:empty {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: #FFF9F0;
+        }
+        #root:empty::after {
+            content: "正在准备菜单...";
+            color: #FF8C00;
+            font-size: 1.2rem;
+            font-family: 'ZCOOL KuaiLe', cursive;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
     </style>
     <script type="importmap">
 {

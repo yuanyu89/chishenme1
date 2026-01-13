@@ -17,17 +17,18 @@ const App: React.FC = () => {
   });
 
   const filteredList = useMemo(() => {
-    return FOOD_LIST.filter(item => {
+    const list = FOOD_LIST.filter(item => {
       if (preferences.onlyVegetarian && !item.isVegetarian) return false;
       if (item.tags.some(tag => preferences.excludedTags.includes(tag))) return false;
       return true;
     });
+    return list;
   }, [preferences]);
 
   const handlePick = useCallback(() => {
     if (isSpinning) return;
     if (filteredList.length === 0) {
-      alert("哎呀，选出的餐厅都被你排除掉啦！请修改偏好设置后再试。");
+      alert("筛选条件太苛刻啦，没有找到符合要求的食物。");
       return;
     }
 
@@ -68,107 +69,106 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-start sm:justify-center p-4 sm:p-8 bg-[#FFF9F0] transition-colors duration-500 overflow-y-auto">
-      {/* Background elements */}
-      <div className="fixed top-[-50px] left-[-50px] w-48 sm:w-64 h-48 sm:h-64 bg-orange-200 rounded-full blur-3xl opacity-30 pointer-events-none"></div>
-      <div className="fixed bottom-[-50px] right-[-50px] w-48 sm:w-64 h-48 sm:h-64 bg-yellow-200 rounded-full blur-3xl opacity-30 pointer-events-none"></div>
+    <div className="min-h-screen flex flex-col items-center bg-[#FFF9F0] p-4 sm:p-6 overflow-x-hidden">
+      {/* 装饰背景层 */}
+      <div className="fixed -top-20 -left-20 w-64 h-64 bg-orange-200 rounded-full blur-[80px] opacity-20 pointer-events-none"></div>
+      <div className="fixed -bottom-20 -right-20 w-64 h-64 bg-yellow-200 rounded-full blur-[80px] opacity-20 pointer-events-none"></div>
 
-      <header className="text-center mb-6 sm:mb-8 z-10 w-full pt-4 sm:pt-0">
-        <h1 className="text-4xl sm:text-6xl font-cute text-[#FF8C00] mb-2 drop-shadow-sm leading-tight">
-          今天中午吃什么？
+      {/* 头部 */}
+      <header className="w-full max-w-md text-center py-6 sm:py-10 z-10">
+        <h1 className="text-4xl sm:text-5xl font-cute text-[#FF8C00] mb-2 drop-shadow-sm tracking-tight">
+          今天中午吃什么
         </h1>
-        <p className="text-[#8D6E63] font-medium text-sm sm:text-base">拯救你的午餐困难症 🥡</p>
+        <p className="text-[#8D6E63] text-sm opacity-80">为你挑选最心动的一餐 ✨</p>
       </header>
 
-      <main className="w-full max-w-md flex flex-col items-center gap-4 sm:gap-6 z-10">
-        {/* Main Display Card */}
-        <div className={`relative w-full min-h-[300px] sm:min-h-[380px] bg-white rounded-[2.5rem] shadow-2xl flex flex-col items-center justify-center p-6 sm:p-8 border-4 sm:border-8 border-orange-100 transition-all duration-500 ${isSpinning ? 'scale-95' : 'scale-100'}`}>
+      {/* 主体区域 */}
+      <main className="w-full max-w-md flex flex-col gap-6 z-10">
+        
+        {/* 展示卡片 */}
+        <div className={`relative w-full bg-white rounded-[2.5rem] shadow-xl border-4 border-orange-50 p-6 sm:p-10 flex flex-col items-center transition-all duration-500 overflow-hidden ${isSpinning ? 'scale-[0.98]' : 'scale-100'}`}>
           {!currentFood ? (
-            <div className="text-center animate-bounce-subtle">
-              <span className="text-6xl sm:text-8xl mb-4 block">🤤</span>
-              <p className="text-lg text-gray-400 font-medium font-cute">请 主 公 翻 牌</p>
+            <div className="py-12 flex flex-col items-center animate-bounce-subtle">
+              <span className="text-7xl sm:text-8xl mb-6">🍽️</span>
+              <p className="text-lg font-cute text-orange-300">翻 牌 开 始</p>
             </div>
           ) : (
-            <div className={`flex flex-col items-center justify-center transition-all duration-300 w-full ${isSpinning ? 'opacity-50' : 'opacity-100'}`}>
+            <div className={`w-full flex flex-col items-center transition-opacity duration-300 ${isSpinning ? 'opacity-40' : 'opacity-100'}`}>
               <div className="text-7xl sm:text-9xl mb-4 drop-shadow-md animate-bounce-subtle">
                 {currentFood.emoji}
               </div>
-              <h2 className="text-2xl sm:text-4xl font-cute text-[#FF7F50] mb-3 text-center leading-snug">
+              <h2 className="text-2xl sm:text-3xl font-cute text-[#FF7F50] text-center mb-2 leading-tight">
                 {currentFood.name}
               </h2>
-              <span className="px-3 py-1 bg-orange-50 text-orange-400 rounded-full text-[10px] sm:text-xs font-bold border border-orange-100 mb-4">
+              <span className="px-3 py-1 bg-orange-50 text-orange-400 rounded-full text-[10px] sm:text-xs font-bold border border-orange-100 mb-6">
                 {currentFood.category}
               </span>
               
-              {/* AI Tip - Now integrated INSIDE the card flow to avoid obscuring the button */}
-              {!isSpinning && aiRating && (
-                <div className="w-full bg-[#FFF9F0] border border-orange-200 p-3 sm:p-4 rounded-2xl animate-in fade-in slide-in-from-bottom-2 duration-500">
-                  <p className="text-xs sm:text-sm text-[#8D6E63] font-medium italic text-center leading-relaxed">
-                    “ {aiRating.reason} ”
-                  </p>
-                  <div className="mt-2 text-[10px] font-bold text-orange-400 text-right">
-                    ✨ 今日推荐：{aiRating.mood}
+              {/* AI 推荐语容器：改为嵌入式而不是绝对定位，彻底解决遮挡问题 */}
+              <div className="w-full min-h-[80px] flex items-center justify-center">
+                {!isSpinning && aiRating && (
+                  <div className="w-full bg-orange-50/50 rounded-2xl p-4 border border-orange-100 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <p className="text-sm sm:text-base text-[#8D6E63] font-medium italic text-center leading-relaxed">
+                      “ {aiRating.reason} ”
+                    </p>
+                    <div className="mt-2 text-[10px] font-bold text-orange-400 text-right">
+                      ✨ 心情关键词：{aiRating.mood}
+                    </div>
                   </div>
-                </div>
-              )}
-
-              {isLoadingReason && !isSpinning && (
-                <div className="w-full bg-orange-50 p-3 rounded-2xl text-center">
-                  <span className="text-[10px] sm:text-xs text-orange-400 animate-pulse">🍱 AI 主厨正在写推荐理由...</span>
-                </div>
-              )}
+                )}
+                {isLoadingReason && !isSpinning && (
+                  <div className="flex items-center gap-2 text-orange-300 text-sm animate-pulse">
+                    <span>🍲 AI 大厨正在码字...</span>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
 
-        {/* Action Button */}
-        <div className="w-full flex flex-col gap-3 pt-2">
+        {/* 交互按钮区域 */}
+        <div className="flex flex-col gap-4">
           <button
             onClick={handlePick}
             disabled={isSpinning}
             className={`
-              group relative w-full py-5 sm:py-6 rounded-[2rem] text-2xl sm:text-3xl font-cute shadow-xl transition-all duration-200
+              w-full py-5 sm:py-6 rounded-3xl text-2xl sm:text-3xl font-cute shadow-lg transition-all active:scale-95
               ${isSpinning 
-                ? 'bg-gray-300 cursor-not-allowed scale-95' 
-                : 'bg-gradient-to-r from-[#FF8C00] to-[#FF7F50] text-white hover:shadow-2xl hover:scale-[1.02] active:scale-95'}
+                ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                : 'bg-gradient-to-br from-[#FF8C00] to-[#FF7F50] text-white hover:shadow-orange-200/50 hover:shadow-2xl'}
             `}
           >
-            {isSpinning ? '正在翻牌...' : '帮 我 选'}
-            {!isSpinning && (
-              <span className="absolute -top-1 -right-1 bg-yellow-400 text-white px-2 py-1 rounded-full text-[10px] animate-bounce shadow-md">
-                饿了!
-              </span>
-            )}
+            {isSpinning ? '挑选美食中...' : '帮 我 选'}
           </button>
 
           <button 
             onClick={() => setShowSettings(!showSettings)}
-            className="text-orange-400 text-xs sm:text-sm font-bold flex items-center justify-center gap-1 hover:text-[#FF8C00] transition-colors py-2"
+            className="text-orange-400/80 text-sm font-bold flex items-center justify-center gap-1 hover:text-[#FF8C00]"
           >
-            🍴 饮食偏好设置 {showSettings ? '收起' : '展开'}
+            ⚙️ 设置偏好 {showSettings ? '▲' : '▼'}
           </button>
         </div>
 
-        {/* Settings Panel */}
+        {/* 设置面板 */}
         {showSettings && (
-          <div className="w-full bg-white rounded-3xl p-5 sm:p-6 shadow-lg border border-orange-50 animate-in fade-in zoom-in duration-300">
+          <div className="w-full bg-white rounded-3xl p-6 shadow-lg border border-orange-50 animate-in fade-in zoom-in duration-300">
             <div className="flex items-center justify-between mb-4 border-b border-orange-50 pb-3">
-              <label className="text-[#8D6E63] font-bold text-sm cursor-pointer flex items-center gap-2">
+              <label className="flex items-center gap-2 cursor-pointer group">
                 <input 
                   type="checkbox" 
-                  className="w-4 h-4 accent-[#FF8C00] rounded"
+                  className="w-5 h-5 accent-[#FF8C00] rounded-md transition-all"
                   checked={preferences.onlyVegetarian}
                   onChange={(e) => setPreferences(p => ({...p, onlyVegetarian: e.target.checked}))}
                 />
-                🥗 只看素食
+                <span className="text-sm font-bold group-hover:text-orange-500 transition-colors">只看素食 🥗</span>
               </label>
               <span className="text-[10px] font-bold text-orange-300 bg-orange-50 px-2 py-0.5 rounded-full">
-                余量: {filteredList.length}
+                可选: {filteredList.length}
               </span>
             </div>
             
             <div className="space-y-3">
-              <p className="text-[#8D6E63] text-[10px] font-bold uppercase tracking-wider">不喜欢/过敏:</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[#8D6E63]">排除不喜欢：</p>
               <div className="flex flex-wrap gap-2">
                 {Object.entries(TAG_LABELS).map(([tag, label]) => (
                   <button
@@ -188,19 +188,19 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* History Area */}
+        {/* 历史记录 */}
         {history.length > 0 && (
-          <div className="w-full mt-4 sm:mt-6">
-            <h3 className="text-[#8D6E63] text-[10px] font-bold uppercase tracking-wider mb-4 flex items-center gap-2">
+          <div className="mt-4">
+            <h3 className="text-[#8D6E63] text-[10px] font-bold uppercase tracking-widest mb-4 flex items-center gap-3">
               <span className="flex-1 h-[1px] bg-orange-100"></span>
-              最近的灵感
+              刚才翻牌
               <span className="flex-1 h-[1px] bg-orange-100"></span>
             </h3>
             <div className="flex gap-3 overflow-x-auto pb-6 no-scrollbar snap-x">
               {history.map((food, idx) => (
                 <div 
                   key={`${food.name}-${idx}`}
-                  className="flex-shrink-0 bg-white p-3 rounded-2xl shadow-sm border border-orange-50 flex flex-col items-center min-w-[75px] snap-start transition-transform hover:scale-105"
+                  className="flex-shrink-0 bg-white p-3 rounded-2xl shadow-sm border border-orange-50 flex flex-col items-center min-w-[80px] snap-start transition-transform hover:scale-105"
                 >
                   <span className="text-2xl mb-1">{food.emoji}</span>
                   <span className="text-[10px] font-medium text-gray-500 text-center line-clamp-1">{food.name.split('+')[0]}</span>
@@ -211,19 +211,9 @@ const App: React.FC = () => {
         )}
       </main>
 
-      <footer className="mt-8 py-6 text-center text-orange-200 text-[10px] font-medium w-full">
-        祝你今天胃口好 | © 2024 午餐选择器
+      <footer className="mt-auto py-8 text-orange-200 text-[10px] font-bold tracking-widest uppercase">
+        Bon Appétit | © 2024 午餐小助手
       </footer>
-
-      <style>{`
-        .no-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-        .no-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-      `}</style>
     </div>
   );
 };

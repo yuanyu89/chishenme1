@@ -11,6 +11,7 @@
         body {
             font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
             background-color: #FFF9F0;
+            color: #5D4037;
         }
         .font-cute {
             font-family: 'ZCOOL KuaiLe', cursive;
@@ -22,22 +23,24 @@
         .animate-bounce-subtle {
             animation: bounce-subtle 2s infinite ease-in-out;
         }
-        .food-slot-machine {
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
+        /* 隐藏滚动条但保留功能 */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
-<script type="importmap">
+    <script type="importmap">
 {
   "imports": {
-    "@google/genai": "https://esm.sh/@google/genai@^1.35.0",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
+    "react": "https://esm.sh/react@19.0.0",
+    "react-dom": "https://esm.sh/react-dom@19.0.0",
+    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+    "@google/genai": "https://esm.sh/@google/genai",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/"
   }
 }
 </script>
 </head>
-<body class="overflow-x-hidden">
+<body class="overflow-x-hidden antialiased">
     <div id="root"></div>
 </body>
 </html>

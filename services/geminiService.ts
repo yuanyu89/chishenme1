@@ -1,20 +1,26 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { AIRating } from "../types";
+import { AIRating, CrowdType } from "../types.ts";
 
 /**
  * 获取推荐理由
  * 使用 Google GenAI SDK 获取美食推荐文案
  */
-export async function getFoodReason(foodName: string): Promise<AIRating> {
-  // 遵循指南：在调用时初始化 GoogleGenAI 实例
+export async function getFoodReason(foodName: string, crowdType: CrowdType): Promise<AIRating> {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
+  const crowdLabelMap: Record<CrowdType, string> = {
+    'fat-loss': '正在减脂期，需要控制热量但想吃得开心',
+    'muscle-gain': '正在增肌期，需要补充高质量蛋白质和能量',
+    'normal': '正常饮食，追求味道好和心情愉悦'
+  };
+
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview", 
-      // 遵循指南：直接传递字符串作为内容
-      contents: `为什么今天中午适合吃${foodName}？请给出一个简短、可爱且极具诱惑力的理由。`,
+      contents: `用户目前的饮食目标是：${crowdLabelMap[crowdType]}。
+      为什么今天中午适合吃“${foodName}”？请给出一个简短、可爱且极具诱惑力的理由。
+      如果是减脂期，请侧重低负担；如果是增肌期，请侧重营养补给。`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -26,16 +32,15 @@ export async function getFoodReason(foodName: string): Promise<AIRating> {
             },
             mood: {
               type: Type.STRING,
-              description: "一种心情描述，如'元气满满'、'幸福感爆棚'",
+              description: "一种心情描述",
             }
           },
           required: ["reason", "mood"]
         },
-        systemInstruction: "你是一个可爱又专业的美食评论家，说话风格俏皮，喜欢用表情符号。你的目标是让用户对抽到的食物产生强烈的食欲。"
+        systemInstruction: "你是一个可爱又专业的美食点评助手。说话俏皮，喜欢用 Emoji。"
       }
     });
 
-    // 遵循指南：直接访问 .text 属性，它是 getter
     const jsonStr = response.text?.trim();
     if (!jsonStr) throw new Error("AI response empty");
     
@@ -45,13 +50,11 @@ export async function getFoodReason(foodName: string): Promise<AIRating> {
       mood: result.mood || "期待满满"
     };
   } catch (error) {
-    console.warn("AI 接口调用异常，已启用本地推荐库:", error);
-    // 降级方案
+    console.warn("AI 接口降级:", error);
     const fallbacks = [
       "这就是为你量身定做的午餐！吃饱了才有力气努力呀~ ✨",
       "闻到香味了吗？这就是今天最懂你的那碗人间烟火！🥘",
-      "生活已经很苦了，中午一定要吃点好的犒劳一下！🍓",
-      "相信直觉，这份美食绝对能唤醒你下午的全部元气！🚀"
+      "生活已经很苦了，中午一定要吃点好的犒劳一下！🍓"
     ];
     return {
       reason: fallbacks[Math.floor(Math.random() * fallbacks.length)],

@@ -3,14 +3,14 @@ import { AIRating } from "../types";
 
 /**
  * 获取推荐理由
- * 使用 gemini-flash-lite-latest 提供更稳定的响应。
- * 针对 Rpc failed (code 500) 错误，Lite 模型通常能绕过复杂的推理超时问题。
+ * 针对 Rpc failed (code 500) 错误，使用了更稳健的模型配置和全面的降级逻辑。
  */
 export async function getFoodReason(foodName: string): Promise<AIRating> {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-flash-lite-latest",
+      model: "gemini-3-flash-preview", 
       contents: [{ parts: [{ text: `为什么今天中午适合吃${foodName}？请给出一个简短、可爱且极具诱惑力的理由。` }] }],
       config: {
         responseMimeType: "application/json",
@@ -32,23 +32,26 @@ export async function getFoodReason(foodName: string): Promise<AIRating> {
       }
     });
 
-    // .text 是属性而非方法
     const jsonStr = response.text?.trim();
-    if (!jsonStr) {
-      throw new Error("Empty response from AI");
-    }
+    if (!jsonStr) throw new Error("AI response empty");
     
     const result = JSON.parse(jsonStr);
     return {
-      reason: result.reason || "因为它看起来就很好吃！你是美食的小雷达~ 🤤",
+      reason: result.reason || "这就是为你准备的最佳选择，快去享用吧！✨",
       mood: result.mood || "期待满满"
     };
   } catch (error) {
-    console.error("AI Reason generation failed:", error);
-    // 降级处理，保证用户体验
+    console.warn("AI 接口调用异常，已启用本地推荐库:", error);
+    // 降级方案：确保在 500 错误时用户依然有内容可看
+    const fallbacks = [
+      "这就是为你量身定做的午餐！吃饱了才有力气努力呀~ ✨",
+      "闻到香味了吗？这就是今天最懂你的那碗人间烟火！🥘",
+      "生活已经很苦了，中午一定要吃点好的犒劳一下！🍓",
+      "相信直觉，这份美食绝对能唤醒你下午的全部元气！🚀"
+    ];
     return {
-      reason: "因为它看起来就很好吃！你是美食的小雷达~ 🤤",
-      mood: "期待满满"
+      reason: fallbacks[Math.floor(Math.random() * fallbacks.length)],
+      mood: "随缘美味"
     };
   }
 }

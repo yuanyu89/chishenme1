@@ -1,8 +1,8 @@
 
 import React, { useState, useCallback, useMemo } from 'react';
-import { FOOD_LIST, TAG_LABELS } from './constants';
-import { FoodItem, AIRating, UserPreferences } from './types';
-import { getFoodReason } from './services/geminiService';
+import { FOOD_LIST, TAG_LABELS } from './constants.ts';
+import { FoodItem, AIRating, UserPreferences } from './types.ts';
+import { getFoodReason } from './services/geminiService.ts';
 
 const App: React.FC = () => {
   const [currentFood, setCurrentFood] = useState<FoodItem | null>(null);
@@ -57,6 +57,15 @@ const App: React.FC = () => {
     }, 120);
   }, [isSpinning, filteredList]);
 
+  const toggleTag = (tag: string) => {
+    setPreferences(prev => ({
+      ...prev,
+      excludedTags: prev.excludedTags.includes(tag)
+        ? prev.excludedTags.filter(t => t !== tag)
+        : [...prev.excludedTags, tag]
+    }));
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center bg-[#FFF9F0] p-4 sm:p-6 select-none">
       <header className="w-full max-w-md text-center py-8 z-10">
@@ -68,12 +77,12 @@ const App: React.FC = () => {
         <div className={`w-full bg-white rounded-[2.5rem] shadow-xl border-4 border-orange-50 p-6 flex flex-col items-center transition-all ${isSpinning ? 'scale-[0.98]' : 'scale-100'}`}>
           {!currentFood ? (
             <div className="py-16 flex flex-col items-center">
-              <span className="text-8xl mb-6 animate-bounce-subtle">🍱</span>
+              <span className="text-8xl mb-6">🍱</span>
               <p className="text-lg font-cute text-orange-200">点击按钮，开启好运</p>
             </div>
           ) : (
             <div className={`w-full flex flex-col items-center ${isSpinning ? 'opacity-40' : 'opacity-100'}`}>
-              <div className="text-8xl mb-4 h-32 flex items-center drop-shadow-md animate-bounce-subtle">
+              <div className="text-8xl mb-4 h-32 flex items-center drop-shadow-md">
                 {currentFood.emoji}
               </div>
               <h2 className="text-2xl sm:text-3xl font-cute text-[#FF7F50] text-center mb-1">
@@ -85,7 +94,7 @@ const App: React.FC = () => {
               
               <div className="w-full min-h-[100px] flex items-center justify-center border-t border-orange-50 pt-4">
                 {!isSpinning && aiRating && (
-                  <div className="w-full bg-orange-50/40 rounded-2xl p-4 animate-in fade-in slide-in-from-bottom-2">
+                  <div className="w-full bg-orange-50/40 rounded-2xl p-4 transition-all">
                     <p className="text-sm text-[#8D6E63] font-medium italic text-center leading-relaxed">
                       “ {aiRating.reason} ”
                     </p>
@@ -110,58 +119,67 @@ const App: React.FC = () => {
             onClick={handlePick}
             disabled={isSpinning}
             className={`w-full py-5 rounded-[2rem] text-2xl font-cute shadow-lg transition-all active:scale-95 ${
-              isSpinning ? 'bg-gray-100 text-gray-300' : 'bg-gradient-to-r from-[#FF8C00] to-[#FF7F50] text-white'
+              isSpinning ? 'bg-orange-200 cursor-not-allowed' : 'bg-[#FF8C00] text-white hover:bg-[#FF7F50]'
             }`}
           >
-            {isSpinning ? '正在为您挑选...' : '帮 我 选'}
+            {isSpinning ? '正在纠结中...' : '帮我选一个！'}
           </button>
           
-          <button onClick={() => setShowSettings(!showSettings)} className="text-orange-400 font-cute text-sm">
-            {showSettings ? '隐藏设置 ▲' : '口味设置 ▼'}
+          <button
+            onClick={() => setShowSettings(!showSettings)}
+            className="text-orange-400 text-sm font-cute opacity-60 hover:opacity-100 transition-opacity"
+          >
+            {showSettings ? '收起筛选 ↑' : '不喜欢这些？去设置条件 ↓'}
           </button>
         </div>
 
         {showSettings && (
-          <div className="bg-white/80 backdrop-blur-md rounded-3xl p-6 border-2 border-orange-50 animate-in zoom-in-95">
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-orange-50">
-              <span className="text-sm font-bold text-[#8D6E63]">只要素食 🥬</span>
-              <input 
-                type="checkbox" 
-                checked={preferences.onlyVegetarian}
-                onChange={e => setPreferences(p => ({ ...p, onlyVegetarian: e.target.checked }))}
-                className="w-5 h-5 accent-orange-500"
-              />
-            </div>
-            <div className="space-y-3">
-              <span className="text-xs font-bold text-[#8D6E63] block opacity-50">不吃这些:</span>
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(TAG_LABELS).map(([tag, label]) => (
-                  <button
-                    key={tag}
-                    onClick={() => setPreferences(p => ({
-                      ...p,
-                      excludedTags: p.excludedTags.includes(tag) ? p.excludedTags.filter(t => t !== tag) : [...p.excludedTags, tag]
-                    }))}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
-                      preferences.excludedTags.includes(tag) ? 'bg-orange-500 text-white' : 'bg-white text-orange-400 border border-orange-100'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
+          <div className="bg-white rounded-3xl p-6 border-2 border-dashed border-orange-100 animate-in fade-in zoom-in-95">
+            <h3 className="text-[#8D6E63] font-bold text-sm mb-4">偏好设置</h3>
+            <div className="flex flex-col gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={preferences.onlyVegetarian}
+                  onChange={(e) => setPreferences(prev => ({ ...prev, onlyVegetarian: e.target.checked }))}
+                  className="w-4 h-4 accent-orange-500"
+                />
+                <span className="text-sm text-[#8D6E63]">只看素食 🌱</span>
+              </label>
+              
+              <div>
+                <p className="text-xs text-gray-400 mb-2">排除过敏或不喜的内容:</p>
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(TAG_LABELS).map(([tag, label]) => (
+                    <button
+                      key={tag}
+                      onClick={() => toggleTag(tag)}
+                      className={`px-3 py-1 rounded-full text-xs border transition-all ${
+                        preferences.excludedTags.includes(tag)
+                          ? 'bg-red-50 border-red-100 text-red-400'
+                          : 'bg-gray-50 border-transparent text-gray-400'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         )}
 
-        {history.length > 0 && !isSpinning && (
-          <div className="mt-2 overflow-x-auto no-scrollbar flex gap-2">
-            {history.map((item, idx) => (
-              <div key={idx} className="flex-shrink-0 bg-white/50 px-3 py-2 rounded-xl border border-orange-50 flex items-center gap-2">
-                <span className="text-lg">{item.emoji}</span>
-                <span className="text-xs text-[#8D6E63]">{item.name.split('+')[0]}</span>
-              </div>
-            ))}
+        {history.length > 0 && (
+          <div className="mt-4">
+            <p className="text-xs text-gray-400 mb-2 ml-2">最近抽到:</p>
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              {history.map((item, idx) => (
+                <div key={`${item.name}-${idx}`} className="flex-shrink-0 bg-white/50 border border-orange-50 px-3 py-2 rounded-xl flex items-center gap-2 opacity-60">
+                  <span>{item.emoji}</span>
+                  <span className="text-xs text-[#8D6E63]">{item.name}</span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </main>
@@ -169,4 +187,5 @@ const App: React.FC = () => {
   );
 };
 
+// 修复错误：添加 default export
 export default App;

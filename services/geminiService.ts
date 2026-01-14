@@ -1,17 +1,20 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { AIRating } from "../types";
 
 /**
  * 获取推荐理由
- * 针对 Rpc failed (code 500) 错误，使用了更稳健的模型配置和全面的降级逻辑。
+ * 使用 Google GenAI SDK 获取美食推荐文案
  */
 export async function getFoodReason(foodName: string): Promise<AIRating> {
+  // 遵循指南：在调用时初始化 GoogleGenAI 实例
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview", 
-      contents: [{ parts: [{ text: `为什么今天中午适合吃${foodName}？请给出一个简短、可爱且极具诱惑力的理由。` }] }],
+      // 遵循指南：直接传递字符串作为内容
+      contents: `为什么今天中午适合吃${foodName}？请给出一个简短、可爱且极具诱惑力的理由。`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -32,6 +35,7 @@ export async function getFoodReason(foodName: string): Promise<AIRating> {
       }
     });
 
+    // 遵循指南：直接访问 .text 属性，它是 getter
     const jsonStr = response.text?.trim();
     if (!jsonStr) throw new Error("AI response empty");
     
@@ -42,7 +46,7 @@ export async function getFoodReason(foodName: string): Promise<AIRating> {
     };
   } catch (error) {
     console.warn("AI 接口调用异常，已启用本地推荐库:", error);
-    // 降级方案：确保在 500 错误时用户依然有内容可看
+    // 降级方案
     const fallbacks = [
       "这就是为你量身定做的午餐！吃饱了才有力气努力呀~ ✨",
       "闻到香味了吗？这就是今天最懂你的那碗人间烟火！🥘",
